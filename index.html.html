@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微沙之光・能量導航</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --sand-bg: #f9f6f0;    /* 淺米底色 */
+            --sand-deep: #d4a373;  /* 深流沙金：用於啟動狀態 */
+            --sand-muted: #e9e0d2; /* 預設格線色 */
+            --zodiac-deep: #8e7dbe; /* 深藕紫：用於星座加持 */
+            --text-main: #4a3f35;  /* 深咖啡文字 */
+        }
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background: var(--sand-bg); color: var(--text-main);
+            display: flex; justify-content: center; padding: 20px; 
+            background-image: radial-gradient(var(--sand-muted) 0.8px, transparent 0.8px);
+            background-size: 24px 24px;
+        }
+        .card { 
+            background: white; padding: 35px; border-radius: 30px; 
+            box-shadow: 0 20px 60px rgba(74, 63, 53, 0.1); 
+            width: 100%; max-width: 420px; text-align: center;
+            position: relative; border: 1px solid rgba(212, 163, 115, 0.2);
+        }
+        .card::before {
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 10px;
+            background: linear-gradient(90deg, var(--sand-deep), var(--zodiac-deep));
+            border-radius: 30px 30px 0 0;
+        }
+
+        h2 { color: var(--text-main); margin-bottom: 5px; font-weight: 700; letter-spacing: 2px; }
+        .subtitle { font-size: 0.8rem; color: #9e8e7f; margin-bottom: 25px; letter-spacing: 1px; font-style: italic; }
+        
+        .zodiac-badge {
+            display: inline-block; background: #f4f1ed;
+            color: var(--text-main); padding: 6px 16px; border-radius: 20px;
+            font-size: 0.9rem; font-weight: bold; margin-bottom: 15px; border: 1px solid var(--sand-muted);
+        }
+
+        .grid { 
+            display: grid; 
+            grid-template-rows: repeat(3, 1fr); 
+            grid-template-columns: repeat(3, 1fr);
+            grid-auto-flow: column; 
+            gap: 12px; margin: 15px 0; background: #faf8f5; padding: 20px; border-radius: 24px; border: 1px solid var(--sand-muted); 
+        }
+        .cell { background: #fff; height: 55px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: bold; border-radius: 15px; color: #ece9e4; border: 1px solid #f1eeea; transition: all 0.3s ease; }
+        
+        /* 強化後的啟動樣式 */
+        .cell.active { background: var(--sand-deep); color: white; border: none; box-shadow: 0 6px 12px rgba(212, 163, 115, 0.4); }
+        .cell.zodiac-active { border: 3px solid var(--zodiac-deep); color: var(--zodiac-deep); }
+
+        .input-area { margin-bottom: 25px; }
+        input { width: 75%; padding: 12px; border: 2px solid var(--sand-muted); border-radius: 15px; text-align: center; outline: none; margin-bottom: 12px; font-size: 1rem; color: var(--text-main);}
+        input:focus { border-color: var(--sand-deep); }
+        button { background: var(--text-main); color: #fff; border: none; padding: 12px 24px; border-radius: 15px; cursor: pointer; transition: 0.3s; margin: 5px; font-size: 0.95rem; font-weight: bold; }
+        button:hover { transform: translateY(-2px); opacity: 0.9; }
+        .btn-save { background: #fff; color: var(--text-main); border: 2px solid var(--sand-muted); }
+
+        .main-num-box { margin: 25px 0; text-align: left; background: #fffdfa; padding: 20px; border-radius: 20px; border: 1px solid var(--sand-muted); }
+        .main-num-title { font-size: 1.3rem; font-weight: bold; color: var(--sand-deep); display: block; margin-bottom: 8px; }
+        
+        .lucky-color-section {
+            background: #fff; padding: 15px; border-radius: 18px; display: flex; align-items: center; gap: 15px; margin-top: 15px; border: 2px dashed var(--sand-muted);
+        }
+        .color-dot { width: 50px; height: 50px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.1); flex-shrink: 0; }
+        .color-name { font-weight: bold; font-size: 0.95rem; display: block; color: var(--text-main); }
+        .color-effect { font-size: 0.8rem; color: #7a6f64; }
+
+        .section-label { font-weight: bold; font-size: 0.85rem; color: #b7a99a; margin: 20px 0 8px 0; display: block; text-align: left; }
+        .tag-container { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { background: var(--sand-muted); padding: 5px 12px; border-radius: 10px; font-size: 0.8rem; font-weight: bold; color: var(--text-main); }
+    </style>
+</head>
+<body>
+
+<div class="card" id="captureArea">
+    <h2>微沙之光・能量導航</h2>
+    <p class="subtitle">Finding Light in Every Grain of Sand</p>
+    
+    <div class="input-area" id="controlPanel">
+        <input type="date" id="birthday">
+        <br>
+        <button onclick="analyze()">生成能量導航</button>
+        <button class="btn-save" onclick="saveAsImage()">儲存圖片</button>
+    </div>
+
+    <div id="zodiacDisplay" class="zodiac-badge" style="display:none;"></div>
+
+    <div class="grid">
+        <div id="c1" class="cell">1</div><div id="c2" class="cell">2</div><div id="c3" class="cell">3</div>
+        <div id="c4" class="cell">4</div><div id="c5" class="cell">5</div><div id="c6" class="cell">6</div>
+        <div id="c7" class="cell">7</div><div id="c8" class="cell">8</div><div id="c9" class="cell">9</div>
+    </div>
+
+    <div id="mainContent" style="display:none;">
+        <div class="main-num-box">
+            <span class="main-num-title" id="numTitle"></span>
+            <div id="zodiacComboDesc" style="font-size: 0.9rem; line-height: 1.6;"></div>
+        </div>
+
+        <div class="lucky-color-section" id="luckyColorArea">
+            <div class="color-dot" id="colorDot"></div>
+            <div class="color-info">
+                <span class="color-name" id="colorName"></span>
+                <span class="color-effect" id="colorEffect"></span>
+            </div>
+        </div>
+
+        <span class="section-label">✦ 潛能天賦連線</span>
+        <div class="tag-container" id="lineTags"></div>
+    </div>
+</div>
+
+<script>
+    // 保留先前的 JavaScript 邏輯，僅更新樣式與數值
+    const colorMap = {
+        1: { name: "紅色 (Red)", code: "#ee5253", effect: "強化開創力，提振自信與領導能量。" },
+        2: { name: "橙色 (Orange)", code: "#ff9f43", effect: "提升協調感，溫暖人際關係的頻率。" },
+        3: { name: "黃色 (Yellow)", code: "#feca57", effect: "激發創意靈感，帶來喜悅與樂觀。" },
+        4: { name: "綠色 (Green)", code: "#10ac84", effect: "穩定內心焦慮，強化實踐與紮根能力。" },
+        5: { name: "藍色 (Blue)", code: "#54a0ff", effect: "舒緩衝動情緒，提升溝通與表達自由。" },
+        6: { name: "靛色 (Indigo)", code: "#5f27cd", effect: "增進療癒能量，平衡責任與愛的重量。" },
+        7: { name: "紫色 (Purple)", code: "#8c7ae6", effect: "沉澱繁雜思緒，開啟直覺與真理之門。" },
+        8: { name: "金色 (Gold)", code: "#d4af37", effect: "聚焦目標意志，吸引豐盛與成功的顯化。" },
+        9: { name: "白色 (White)", code: "#ffffff", effect: "清理負面場域，回歸純淨的大我夢想。" }
+    };
+
+    const zodiacData = [
+        { name: "牡羊座", sign: "♈", num: 1, range: [321, 419] },
+        { name: "金牛座", sign: "♉", num: 2, range: [420, 520] },
+        { name: "雙子座", sign: "♊", num: 3, range: [521, 621] },
+        { name: "巨蟹座", sign: "♋", num: 4, range: [622, 722] },
+        { name: "獅子座", sign: "♌", num: 5, range: [723, 822] },
+        { name: "處女座", sign: "♍", num: 6, range: [823, 922] },
+        { name: "天秤座", sign: "♎", num: 7, range: [923, 1023] },
+        { name: "天蠍座", sign: "♏", num: 8, range: [1024, 1122] },
+        { name: "射手座", sign: "♐", num: 9, range: [1123, 1221] },
+        { name: "魔羯座", sign: "♑", num: 1, range: [1222, 1231] },
+        { name: "魔羯座", sign: "♑", num: 1, range: [101, 119] },
+        { name: "水瓶座", sign: "♒", num: 2, range: [120, 218] },
+        { name: "雙魚座", sign: "♓", num: 3, range: [219, 320] }
+    ];
+
+    function analyze() {
+        const dateInput = document.getElementById('birthday').value;
+        if (!dateInput) return alert("請輸入出生日期");
+        const dateObj = new Date(dateInput);
+        const val = (dateObj.getMonth() + 1) * 100 + dateObj.getDate();
+        const zodiac = zodiacData.find(z => val >= z.range[0] && val <= z.range[1]) || zodiacData[10];
+        const nums = dateInput.replace(/-/g, '').split('').map(Number);
+        let sum = nums.reduce((a, b) => a + b, 0);
+        while (sum > 9) sum = sum.toString().split('').map(Number).reduce((a, b) => a + b, 0);
+
+        document.getElementById('mainContent').style.display = 'block';
+        document.getElementById('zodiacDisplay').style.display = 'inline-block';
+        document.getElementById('zodiacDisplay').innerText = `${zodiac.sign} ${zodiac.name}`;
+        document.getElementById('numTitle').innerText = `主命數 ${sum}`;
+        document.getElementById('zodiacComboDesc').innerText = `你是 ${zodiac.name} 的靈魂特質與 ${sum} 號能量的結合。`;
+
+        const luckyColor = colorMap[sum];
+        document.getElementById('colorDot').style.backgroundColor = luckyColor.code;
+        document.getElementById('colorName').innerText = `能量導航色：${luckyColor.name}`;
+        document.getElementById('colorEffect').innerText = luckyColor.effect;
+
+        const birthdayNums = new Set(nums); birthdayNums.add(sum);
+        for (let i = 1; i <= 9; i++) {
+            const cell = document.getElementById(`c${i}`);
+            cell.className = 'cell';
+            if (birthdayNums.has(i)) cell.classList.add('active');
+            if (i === zodiac.num) cell.classList.add('zodiac-active');
+        }
+        const totalActive = new Set([...birthdayNums, zodiac.num]);
+        renderLines(totalActive);
+    }
+
+    function renderLines(allNums) {
+        const lineTags = document.getElementById('lineTags');
+        lineTags.innerHTML = '';
+        const lines = [{n:"123 執行之沙",p:[1,2,3]},{n:"456 穩定之沙",p:[4,5,6]},{n:"789 智慧之沙",p:[7,8,9]},{n:"147 財庫連線",p:[1,4,7]},{n:"258 人脈連線",p:[2,5,8]},{n:"369 創意連線",p:[3,6,9]},{n:"159 成功連線",p:[1,5,9]},{n:"357 直覺連線",p:[3,5,7]}];
+        lines.forEach(l => {
+            if(l.p.every(v => allNums.has(v))) lineTags.innerHTML += `<span class="tag">✅ ${l.n}</span>`;
+        });
+        if(lineTags.innerHTML==='') lineTags.innerHTML = '<span class="tag">純粹個體頻率</span>';
+    }
+
+    function saveAsImage() {
+        const ctrl = document.getElementById('controlPanel');
+        ctrl.style.display = 'none';
+        html2canvas(document.getElementById('captureArea'), { backgroundColor: "#ffffff", scale: 2 }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = '微沙之光_能量卡.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            ctrl.style.display = 'block';
+        });
+    }
+</script>
+
+</body>
+</html>
